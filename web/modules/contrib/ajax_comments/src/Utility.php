@@ -96,11 +96,9 @@ class Utility {
    *   The value of the id attribute of the comment field wrapper element.
    */
   public static function getWrapperIdFromEntity(ContentEntityInterface $commented_entity, $field_name) {
-
     /** @var \Drupal\ajax_comments\TempStore $tempStore */
     $tempStore = \Drupal::service('ajax_comments.temp_store');
-    $view_mode = $tempStore->getViewMode($commented_entity->getEntityType()->getLabel());
-
+    $view_mode = $tempStore->getViewMode($commented_entity->getEntityType()->getLabel()->getUntranslatedString());
     // Load the early-stage render array for the commented entity.
     $build = \Drupal::entityTypeManager()
       ->getViewBuilder($commented_entity->getEntityTypeId())
@@ -173,7 +171,6 @@ class Utility {
         $wrapper_html_id = $render_array['#attributes']['id'];
       }
     }
-
     // Make sure users can alter the wrapper if necessary.
     \Drupal::moduleHandler()->alter('ajax_comments_wrapper_id', $wrapper_html_id, $commented_entity, $field_name);
 
@@ -199,8 +196,8 @@ class Utility {
       $input[AjaxResponseSubscriber::AJAX_REQUEST_PARAMETER]
     );
     $has_ajax_format = $request
-      ->query
-      ->get(MainContentViewSubscriber::WRAPPER_FORMAT) == 'drupal_ajax';
+        ->query
+        ->get(MainContentViewSubscriber::WRAPPER_FORMAT) == 'drupal_ajax';
     return $has_ajax_parameter || $has_ajax_input_parameter || $has_ajax_format;
   }
 
@@ -233,5 +230,4 @@ class Utility {
       $elements[$key]['#attributes']['class'][] = AjaxCommentsController::$commentClassPrefix . $elements[$key]['#comment']->id();
     }
   }
-
 }

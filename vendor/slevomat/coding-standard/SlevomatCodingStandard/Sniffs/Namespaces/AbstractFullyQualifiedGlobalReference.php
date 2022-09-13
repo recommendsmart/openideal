@@ -45,7 +45,7 @@ abstract class AbstractFullyQualifiedGlobalReference implements Sniff
 	abstract protected function isValidType(ReferencedName $name): bool;
 
 	/**
-	 * @return (int|string)[]
+	 * @return array<int, (int|string)>
 	 */
 	public function register(): array
 	{
@@ -56,7 +56,6 @@ abstract class AbstractFullyQualifiedGlobalReference implements Sniff
 
 	/**
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint
-	 * @param File $phpcsFile
 	 * @param int $openTagPointer
 	 */
 	public function process(File $phpcsFile, $openTagPointer): void

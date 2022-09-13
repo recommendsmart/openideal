@@ -58,9 +58,9 @@ provide the following information with your request:
 CONFIGURATION
 -------------
 
-    1. Navigate to Administration > Extend and enable the module.
-    2. Navigate to Administration > Configuration > Content Authoring >
-       AJAX comments for configuration.
+  1. Navigate to `Administration > Extend` and enable the module.
+  2. Navigate to `Administration > Configuration > Content Authoring >
+     AJAX comments` for configuration.
 
 
 TROUBLESHOOTING
@@ -96,3 +96,4 @@ MAINTAINERS
  * Andrew Belousoff (formatC'vt) - https://www.drupal.org/u/formatcvt
  * Volkan Flörchinger (muschpusch) - https://www.drupal.org/u/muschpusch
  * acouch - https://www.drupal.org/u/acouch
+ * Anton Kuzmenko (qzmenko) - https://www.drupal.org/u/qzmenko

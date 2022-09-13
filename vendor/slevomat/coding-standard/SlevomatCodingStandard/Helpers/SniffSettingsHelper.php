@@ -19,11 +19,18 @@ class SniffSettingsHelper
 
 	/**
 	 * @param string|int $settings
-	 * @return int
 	 */
 	public static function normalizeInteger($settings): int
 	{
 		return (int) trim((string) $settings);
+	}
+
+	/**
+	 * @param string|int|null $settings
+	 */
+	public static function normalizeNullableInteger($settings): ?int
+	{
+		return $settings !== null ? (int) trim((string) $settings) : null;
 	}
 
 	/**

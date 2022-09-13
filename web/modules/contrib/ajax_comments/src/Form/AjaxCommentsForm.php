@@ -7,12 +7,15 @@ use Drupal\ajax_comments\TempStore;
 use Drupal\ajax_comments\Utility;
 use Drupal\comment\CommentForm;
 use Drupal\Component\Utility\Html;
-use Drupal\Core\Entity\EntityManagerInterface;
+use Drupal\Core\Entity\EntityRepositoryInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\CurrentRouteMatch;
 use Drupal\Core\Routing\RouteMatch;
 use Drupal\Core\Render\RendererInterface;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
+use Drupal\Component\Datetime\TimeInterface;
+use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Url;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -48,10 +51,17 @@ class AjaxCommentsForm extends CommentForm {
   protected $tempStore;
 
   /**
+   * A request stack symfony instance.
+   *
+   * @var \Symfony\Component\HttpFoundation\RequestStack
+   */
+  protected $requestStack;
+
+  /**
    * Constructs a new CommentForm.
    *
-   * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
-   *   The entity manager service.
+   *@param \Drupal\Core\Entity\EntityRepositoryInterface $entity_repository
+   *   The entity repository.
    * @param \Drupal\Core\Session\AccountInterface $current_user
    *   The current user.
    * @param \Drupal\Core\Render\RendererInterface $renderer
@@ -62,11 +72,15 @@ class AjaxCommentsForm extends CommentForm {
    *   The CurrentRouteMatch service.
    * @param \Drupal\ajax_comments\FieldSettingsHelper $field_settings_helper
    *   The FieldSettingsHelper service.
+   * @param \Drupal\Core\Entity\EntityTypeBundleInfoInterface $entity_type_bundle_info
+   *   The entity type bundle service.
+   * @param \Drupal\Component\Datetime\TimeInterface $time
+   *   The time service.
    * @param \Drupal\ajax_comments\TempStore $temp_store
    *   The TempStore service.
    */
-  public function __construct(EntityManagerInterface $entity_manager, AccountInterface $current_user, RendererInterface $renderer, RequestStack $request_stack, CurrentRouteMatch $current_route_match, FieldSettingsHelper $field_settings_helper, TempStore $temp_store) {
-    parent::__construct($entity_manager, $current_user, $renderer);
+  public function __construct(EntityRepositoryInterface $entity_repository, AccountInterface $current_user, RendererInterface $renderer, EntityTypeBundleInfoInterface $entity_type_bundle_info = NULL, TimeInterface $time = NULL, EntityFieldManagerInterface $entity_field_manager = NULL, RequestStack $request_stack, CurrentRouteMatch $current_route_match, FieldSettingsHelper $field_settings_helper, TempStore $temp_store) {
+    parent::__construct($entity_repository, $current_user, $renderer, $entity_type_bundle_info, $time, $entity_field_manager);
     $this->requestStack = $request_stack;
     $this->currentRouteMatch = $current_route_match;
     $this->fieldSettingsHelper = $field_settings_helper;
@@ -78,9 +92,12 @@ class AjaxCommentsForm extends CommentForm {
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('entity.manager'),
+      $container->get('entity.repository'),
       $container->get('current_user'),
       $container->get('renderer'),
+      $container->get('entity_type.bundle.info'),
+      $container->get('datetime.time'),
+      $container->get('entity_field.manager'),
       $container->get('request_stack'),
       $container->get('current_route_match'),
       $container->get('ajax_comments.field_settings_helper'),
@@ -114,14 +131,12 @@ class AjaxCommentsForm extends CommentForm {
 
     /** @var \Drupal\comment\CommentInterface $comment */
     $comment = $form_state->getFormObject()->getEntity();
-
-    /** @var \Drupal\ajax_comments\TempStore $tempStore */
+        /** @var \Drupal\ajax_comments\TempStore $tempStore */
     $tempStore = \Drupal::service('ajax_comments.temp_store');
-    $view_mode = $tempStore->getViewMode($comment->getCommentedEntity()->getEntityType()->getLabel());
-
+    $view_mode = $tempStore->getViewMode($comment->getCommentedEntity()->getEntityType()->getLabel()->getUntranslatedString());
     // Check to see if this comment field uses ajax comments.
     $comment_formatter = $this->fieldSettingsHelper->getFieldFormatterFromComment($comment, $view_mode);
-    if (!empty($comment_formatter) && !$this->fieldSettingsHelper->isEnabled($comment_formatter)) {
+    if (empty($comment_formatter) || !$this->fieldSettingsHelper->isEnabled($comment_formatter)) {
       // If not using Ajax Comments, return the unmodified form.
       return $form;
     }
@@ -198,13 +213,11 @@ class AjaxCommentsForm extends CommentForm {
     // Populate the comment-specific variables.
     /** @var \Drupal\comment\CommentInterface $comment */
     $comment = $form_state->getFormObject()->getEntity();
-
     /** @var \Drupal\ajax_comments\TempStore $tempStore */
     $tempStore = \Drupal::service('ajax_comments.temp_store');
-    $view_mode = $tempStore->getViewMode($comment->getCommentedEntity()->getEntityType()->getLabel());
-
+    $view_mode = $tempStore->getViewMode($comment->getCommentedEntity()->getEntityType()->getLabel()->getUntranslatedString());
     $comment_formatter = $this->fieldSettingsHelper->getFieldFormatterFromComment($comment, $view_mode);
-    if (!empty($comment_formatter) && !$this->fieldSettingsHelper->isEnabled($comment_formatter)) {
+    if (empty($comment_formatter) || !$this->fieldSettingsHelper->isEnabled($comment_formatter)) {
       // If not using Ajax Comments, return the unmodified element.
       return $element;
     }
@@ -212,7 +225,7 @@ class AjaxCommentsForm extends CommentForm {
     $commented_entity = $comment->getCommentedEntity();
     $field_name = $comment->getFieldName();
     $cid = $comment->id() ? $comment->id() : 0;
-    $pid = $comment->get('pid')->target_id ? $comment->get('pid')->target_id : 0;
+    $pid = $comment->get('pid')->target_id ? $comment->get('pid')->target_id : NULL;
 
     // Build the #ajax array.
     $ajax = [
@@ -356,6 +369,15 @@ class AjaxCommentsForm extends CommentForm {
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
     parent::validateForm($form, $form_state);
+
+    /** @var \Drupal\comment\CommentInterface $comment */
+    $comment = $form_state->getFormObject()->getEntity();
+    $comment_formatter = $this->fieldSettingsHelper->getFieldFormatterFromComment($comment, 'full');
+    if ($comment_formatter && !$this->fieldSettingsHelper->isEnabled($comment_formatter)) {
+      // If not using Ajax Comments, do not process further.
+      return;
+    }
+
     $request = $this->requestStack->getCurrentRequest();
     $route_name = $this->currentRouteMatch->getRouteName();
     $this->tempStore->processForm($request, $form, $form_state, $is_validating = TRUE);
@@ -388,10 +410,9 @@ class AjaxCommentsForm extends CommentForm {
     $comment = $form_state->getFormObject()->getEntity();
     /** @var \Drupal\ajax_comments\TempStore $tempStore */
     $tempStore = \Drupal::service('ajax_comments.temp_store');
-    $view_mode = $tempStore->getViewMode($comment->getCommentedEntity()->getEntityType()->getLabel());
-
+    $view_mode = $tempStore->getViewMode($comment->getCommentedEntity()->getEntityType()->getLabel()->getUntranslatedString());
     $comment_formatter = $this->fieldSettingsHelper->getFieldFormatterFromComment($comment, $view_mode);
-    if (!empty($comment_formatter) && !$this->fieldSettingsHelper->isEnabled($comment_formatter)) {
+    if (empty($comment_formatter) || !$this->fieldSettingsHelper->isEnabled($comment_formatter)) {
       // If not using Ajax Comments, do not change the redirect.
       return;
     }

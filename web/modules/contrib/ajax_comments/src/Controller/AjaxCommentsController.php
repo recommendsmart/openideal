@@ -18,6 +18,7 @@ use Drupal\Core\Ajax\ReplaceCommand;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\Core\Render\RendererInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
@@ -65,6 +66,13 @@ class AjaxCommentsController extends ControllerBase {
   protected $tempStore;
 
   /**
+   * The messenger service.
+   *
+   * @var \Drupal\Core\Messenger\MessengerInterface
+   */
+  protected $messenger;
+
+  /**
    * Constructs a AjaxCommentsController object.
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
@@ -77,13 +85,16 @@ class AjaxCommentsController extends ControllerBase {
    *   The Router service.
    * @param \Drupal\ajax_comments\TempStore $temp_store
    *   The TempStore service.
+   * @param \Drupal\Core\Messenger\MessengerInterface $messenger
+   *   The Messenger service.
    */
-  public function __construct(EntityTypeManagerInterface $entity_type_manager, AccountInterface $current_user, RendererInterface $renderer, RouterInterface $router, TempStore $temp_store) {
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, AccountInterface $current_user, RendererInterface $renderer, RouterInterface $router, TempStore $temp_store, MessengerInterface $messenger) {
     $this->entityTypeManager = $entity_type_manager;
     $this->currentUser = $current_user;
     $this->renderer = $renderer;
     $this->router = $router;
     $this->tempStore = $temp_store;
+    $this->messenger = $messenger;
   }
 
   /**
@@ -95,7 +106,8 @@ class AjaxCommentsController extends ControllerBase {
       $container->get('current_user'),
       $container->get('renderer'),
       $container->get('router.no_access_checks'),
-      $container->get('ajax_comments.temp_store')
+      $container->get('ajax_comments.temp_store'),
+      $container->get('messenger')
     );
   }
 
@@ -125,20 +137,16 @@ class AjaxCommentsController extends ControllerBase {
     // Load the display settings to ensure that the field formatter
     // configuration is properly applied to the rendered field when it is
     // returned in the ajax response.
-
     /** @var \Drupal\ajax_comments\TempStore $tempStore */
     $tempStore = \Drupal::service('ajax_comments.temp_store');
-    $view_mode = $tempStore->getViewMode($entity->getEntityType()->getLabel());
-
+    $view_mode = $tempStore->getViewMode($entity->getEntityType()->getLabel()->getUntranslatedString());
     $display_options = $this->entityTypeManager
       ->getStorage('entity_view_display')
       ->load($entity->getEntityTypeId() . '.' . $entity->bundle() . '.' . $view_mode)
       ->getComponent($field_name);
     $comment_display = $comment_field->view($display_options);
-
     // Add default classes to comments elements.
     Utility::addCommentClasses($comment_display[0]['comments']);
-
     // To avoid infinite nesting of #theme_wrappers elements on subsequent
     // ajax responses, unset them here.
     unset($comment_display['#theme_wrappers']);
@@ -227,7 +235,7 @@ class AjaxCommentsController extends ControllerBase {
     $settings = \Drupal::config('ajax_comments.settings');
     $notify = $settings->get('notify');
 
-    if ($notify) {
+    if ($notify || !empty($this->messenger->messagesByType(MessengerInterface::TYPE_ERROR))) {
       if (empty($selector)) {
         // Use the first id found in the ajax replacement markup to be
         // inserted into the page as the selector, if none was provided.
@@ -284,6 +292,11 @@ class AjaxCommentsController extends ControllerBase {
         $command
       );
     }
+    else {
+      // Render messages to avoid display them when reloading the page.
+      $status_messages = ['#type' => 'status_messages'];
+      $this->renderer->renderRoot($status_messages);
+    }
 
     return $response;
   }
@@ -327,6 +340,7 @@ class AjaxCommentsController extends ControllerBase {
       // if (\Drupal::config('ajax_comments.settings')->get('enable_scroll')) {
       //   $response->addCommand(new ajaxCommentsScrollToElementCommand('.ajax-comments-reply-form-' . $comment->getCommentedEntityId() . '-' . $comment->get('pid')->target_id . '-' . $comment->id()));
       // }
+
       // Don't delete the tempStore variables here; we need them
       // to persist for the save() method below, where the form returned
       // here will be submitted.
@@ -361,6 +375,7 @@ class AjaxCommentsController extends ControllerBase {
    */
   public function save(Request $request, CommentInterface $comment) {
     $response = new AjaxResponse();
+
     // Store the selectors from the incoming request, if applicable.
     // If the selectors are not in the request, the stored ones will
     // not be overwritten.
@@ -370,7 +385,7 @@ class AjaxCommentsController extends ControllerBase {
     $form = $this->entityFormBuilder()->getForm($comment, 'default', ['editing' => TRUE]);
 
     // Check for errors.
-    if (empty(drupal_get_messages('error', FALSE))) {
+    if (empty($this->messenger->messagesByType('error'))) {
       $errors = FALSE;
       // If there are no errors, set the ajax-updated
       // selector value for the form.
@@ -603,7 +618,7 @@ class AjaxCommentsController extends ControllerBase {
     $form = $this->entityFormBuilder()->getForm($comment);
 
     // Check for errors.
-    if (empty(drupal_get_messages('error', FALSE))) {
+    if (empty($this->messenger->messagesByType('error'))) {
       // If there are no errors, set the ajax-updated
       // selector value for the form.
       $this->tempStore->setSelector('form_html_id', $form['#attributes']['id']);
@@ -767,6 +782,7 @@ class AjaxCommentsController extends ControllerBase {
    */
   public function saveReply(Request $request, EntityInterface $entity, $field_name, $pid) {
     $response = new AjaxResponse();
+
     // Check the user's access to reply.
     // The user should not have made it this far without proper permission,
     // but adding this access check as a fallback.
@@ -824,7 +840,7 @@ class AjaxCommentsController extends ControllerBase {
    *   (optional) Some comments are replies to other comments. In those cases,
    *   $pid is the parent comment's comment ID. Defaults to NULL.
    *
-   * @return \Drupal\Core\Ajax\AjaxResponse
+   * @return \Drupal\Core\Ajax\AjaxResponse $response
    *   The ajax response, if access is denied.
    */
   public function replyAccess(Request $request, AjaxResponse $response, EntityInterface $entity, $field_name, $pid = NULL) {
@@ -843,7 +859,7 @@ class AjaxCommentsController extends ControllerBase {
       if (empty($selector)) {
         $selector = $wrapper_html_id;
       }
-      drupal_set_message(t('You do not have permission to post a comment.'), 'error');
+      $this->messenger->addError(t('You do not have permission to post a comment.'));
       // If this is a new top-level comment (not a reply to another comment so
       // no $pid), replace the comment form with the error message.
       if (empty($pid)) {

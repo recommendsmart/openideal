@@ -4,18 +4,15 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitdec5aedec2aa61e3a875c3392affbeb4
+class ComposerStaticInit1f3e10b85e49bb0d10b31567acd3e766
 {
     public static $files = array (
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
-        '023d27dca8066ef29e6739335ea73bad' => __DIR__ . '/..' . '/symfony/polyfill-php70/bootstrap.php',
-        'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
-        '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
         '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
+        '023d27dca8066ef29e6739335ea73bad' => __DIR__ . '/..' . '/symfony/polyfill-php70/bootstrap.php',
+        '7e9bd612cc444b3eed788ebbe46263a0' => __DIR__ . '/..' . '/laminas/laminas-zendframework-bridge/src/autoload.php',
         'bd9634f2d41831496de0d3dfe4c94881' => __DIR__ . '/..' . '/symfony/polyfill-php56/bootstrap.php',
         '25072dd6e2470089de65ae7bf11d3109' => __DIR__ . '/..' . '/symfony/polyfill-php72/bootstrap.php',
-        '7e9bd612cc444b3eed788ebbe46263a0' => __DIR__ . '/..' . '/laminas/laminas-zendframework-bridge/src/autoload.php',
-        '667aeda72477189d0494fecd327c3641' => __DIR__ . '/..' . '/symfony/var-dumper/Resources/functions/dump.php',
         'f598d06aa772fa33d905e87be6398fb1' => __DIR__ . '/..' . '/symfony/polyfill-intl-idn/bootstrap.php',
         '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
         'c964ee0ededf28c96ebd9db5099ef910' => __DIR__ . '/..' . '/guzzlehttp/promises/src/functions_include.php',
@@ -38,12 +35,23 @@ class ComposerStaticInitdec5aedec2aa61e3a875c3392affbeb4
         '786bf90caabc9e09b6ad4cc5ca8f0e30' => __DIR__ . '/..' . '/laminas/laminas-diactoros/src/functions/normalize_uploaded_files.legacy.php',
         '751a5a3f463e4be759be31748b61737c' => __DIR__ . '/..' . '/laminas/laminas-diactoros/src/functions/parse_cookie_header.legacy.php',
         'def43f6c87e4f8dfd0c9e1b1bab14fe8' => __DIR__ . '/..' . '/symfony/polyfill-iconv/bootstrap.php',
+        'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
+        '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
         '952683d815ff0a7bf322b93c0be7e4e4' => __DIR__ . '/..' . '/chi-teck/drupal-code-generator/src/bootstrap.php',
         '9e4824c5afbdc1482b6025ce3d4dfde8' => __DIR__ . '/..' . '/league/csv/src/functions_include.php',
+        '667aeda72477189d0494fecd327c3641' => __DIR__ . '/..' . '/symfony/var-dumper/Resources/functions/dump.php',
         '801c31d8ed748cfa537fa45402288c95' => __DIR__ . '/..' . '/psy/psysh/src/functions.php',
     );
 
     public static $prefixLengthsPsr4 = array (
+        'n' => 
+        array (
+            'nlib\\cURL\\' => 10,
+            'nlib\\Tool\\' => 10,
+            'nlib\\Path\\' => 10,
+            'nlib\\Log\\' => 9,
+            'nlib\\Instance\\' => 14,
+        ),
         'c' => 
         array (
             'cweagans\\Composer\\' => 18,
@@ -182,6 +190,26 @@ class ComposerStaticInitdec5aedec2aa61e3a875c3392affbeb4
     );
 
     public static $prefixDirsPsr4 = array (
+        'nlib\\cURL\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/nlib/lib-curl',
+        ),
+        'nlib\\Tool\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/nlib/lib-tool',
+        ),
+        'nlib\\Path\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/nlib/lib-path',
+        ),
+        'nlib\\Log\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/nlib/lib-log',
+        ),
+        'nlib\\Instance\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/nlib/lib-instance',
+        ),
         'cweagans\\Composer\\' => 
         array (
             0 => __DIR__ . '/..' . '/cweagans/composer-patches/src',
@@ -606,6 +634,7 @@ class ComposerStaticInitdec5aedec2aa61e3a875c3392affbeb4
         'Error' => __DIR__ . '/..' . '/symfony/polyfill-php70/Resources/stubs/Error.php',
         'PEAR_Exception' => __DIR__ . '/..' . '/pear/pear_exception/PEAR/Exception.php',
         'ParseError' => __DIR__ . '/..' . '/symfony/polyfill-php70/Resources/stubs/ParseError.php',
+        'PhpToken' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/PhpToken.php',
         'SessionUpdateTimestampHandlerInterface' => __DIR__ . '/..' . '/symfony/polyfill-php70/Resources/stubs/SessionUpdateTimestampHandlerInterface.php',
         'Stringable' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Stringable.php',
         'TypeError' => __DIR__ . '/..' . '/symfony/polyfill-php70/Resources/stubs/TypeError.php',
@@ -616,11 +645,11 @@ class ComposerStaticInitdec5aedec2aa61e3a875c3392affbeb4
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitdec5aedec2aa61e3a875c3392affbeb4::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitdec5aedec2aa61e3a875c3392affbeb4::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInitdec5aedec2aa61e3a875c3392affbeb4::$prefixesPsr0;
-            $loader->fallbackDirsPsr0 = ComposerStaticInitdec5aedec2aa61e3a875c3392affbeb4::$fallbackDirsPsr0;
-            $loader->classMap = ComposerStaticInitdec5aedec2aa61e3a875c3392affbeb4::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit1f3e10b85e49bb0d10b31567acd3e766::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit1f3e10b85e49bb0d10b31567acd3e766::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInit1f3e10b85e49bb0d10b31567acd3e766::$prefixesPsr0;
+            $loader->fallbackDirsPsr0 = ComposerStaticInit1f3e10b85e49bb0d10b31567acd3e766::$fallbackDirsPsr0;
+            $loader->classMap = ComposerStaticInit1f3e10b85e49bb0d10b31567acd3e766::$classMap;
 
         }, null, ClassLoader::class);
     }

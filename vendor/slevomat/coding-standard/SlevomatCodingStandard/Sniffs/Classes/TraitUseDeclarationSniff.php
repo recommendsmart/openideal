@@ -9,6 +9,7 @@ use SlevomatCodingStandard\Helpers\TokenHelper;
 use const T_ANON_CLASS;
 use const T_CLASS;
 use const T_COMMA;
+use const T_ENUM;
 use const T_OPEN_CURLY_BRACKET;
 use const T_SEMICOLON;
 use const T_TRAIT;
@@ -28,12 +29,12 @@ class TraitUseDeclarationSniff implements Sniff
 			T_CLASS,
 			T_ANON_CLASS,
 			T_TRAIT,
+			T_ENUM,
 		];
 	}
 
 	/**
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint
-	 * @param File $phpcsFile
 	 * @param int $classPointer
 	 */
 	public function process(File $phpcsFile, $classPointer): void

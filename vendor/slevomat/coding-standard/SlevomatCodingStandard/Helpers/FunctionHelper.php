@@ -4,8 +4,10 @@ namespace SlevomatCodingStandard\Helpers;
 
 use Generator;
 use PHP_CodeSniffer\Files\File;
+use PHP_CodeSniffer\Util\Tokens;
 use SlevomatCodingStandard\Helpers\Annotation\ParameterAnnotation;
 use SlevomatCodingStandard\Helpers\Annotation\ReturnAnnotation;
+use SlevomatCodingStandard\Helpers\Annotation\VariableAnnotation;
 use function array_filter;
 use function array_map;
 use function array_merge;
@@ -17,12 +19,14 @@ use function iterator_to_array;
 use function preg_match;
 use function preg_replace;
 use function sprintf;
+use function substr_count;
 use const T_ANON_CLASS;
 use const T_BITWISE_AND;
 use const T_CLASS;
 use const T_CLOSURE;
 use const T_COLON;
 use const T_ELLIPSIS;
+use const T_ENUM;
 use const T_FUNCTION;
 use const T_INTERFACE;
 use const T_NULLABLE;
@@ -32,6 +36,7 @@ use const T_STRING;
 use const T_TRAIT;
 use const T_USE;
 use const T_VARIABLE;
+use const T_WHITESPACE;
 use const T_YIELD;
 use const T_YIELD_FROM;
 
@@ -40,6 +45,9 @@ use const T_YIELD_FROM;
  */
 class FunctionHelper
 {
+
+	public const LINE_INCLUDE_COMMENT = 1;
+	public const LINE_INCLUDE_WHITESPACE = 2;
 
 	public const SPECIAL_FUNCTIONS = [
 		'array_key_exists',
@@ -107,7 +115,7 @@ class FunctionHelper
 					return sprintf('class@anonymous::%s', $name);
 				}
 
-				if (in_array($conditionTokenCode, [T_CLASS, T_INTERFACE, T_TRAIT], true)) {
+				if (in_array($conditionTokenCode, [T_CLASS, T_INTERFACE, T_TRAIT, T_ENUM], true)) {
 					$name = sprintf(
 						'%s%s::%s',
 						NamespaceHelper::NAMESPACE_SEPARATOR,
@@ -138,7 +146,7 @@ class FunctionHelper
 			return false;
 		}
 		$lastFunctionPointerCondition = array_pop($functionPointerConditions);
-		return in_array($lastFunctionPointerCondition, [T_CLASS, T_INTERFACE, T_TRAIT, T_ANON_CLASS], true);
+		return in_array($lastFunctionPointerCondition, Tokens::$ooScopeTokens, true);
 	}
 
 	public static function findClassPointer(File $phpcsFile, int $functionPointer): ?int
@@ -150,7 +158,7 @@ class FunctionHelper
 		}
 
 		foreach (array_reverse($tokens[$functionPointer]['conditions'], true) as $conditionPointer => $conditionTokenCode) {
-			if (!in_array($conditionTokenCode, [T_CLASS, T_INTERFACE, T_TRAIT, T_ANON_CLASS], true)) {
+			if (!in_array($conditionTokenCode, Tokens::$ooScopeTokens, true)) {
 				continue;
 			}
 
@@ -161,8 +169,6 @@ class FunctionHelper
 	}
 
 	/**
-	 * @param File $phpcsFile
-	 * @param int $functionPointer
 	 * @return string[]
 	 */
 	public static function getParametersNames(File $phpcsFile, int $functionPointer): array
@@ -182,8 +188,6 @@ class FunctionHelper
 	}
 
 	/**
-	 * @param File $phpcsFile
-	 * @param int $functionPointer
 	 * @return (TypeHint|null)[]
 	 */
 	public static function getParametersTypeHints(File $phpcsFile, int $functionPointer): array
@@ -311,8 +315,6 @@ class FunctionHelper
 	}
 
 	/**
-	 * @param File $phpcsFile
-	 * @param int $functionPointer
 	 * @return ParameterAnnotation[]
 	 */
 	public static function getParametersAnnotations(File $phpcsFile, int $functionPointer): array
@@ -323,13 +325,30 @@ class FunctionHelper
 	}
 
 	/**
-	 * @param File $phpcsFile
-	 * @param int $functionPointer
-	 * @return array<string, ParameterAnnotation>
+	 * @return array<string, ParameterAnnotation|VariableAnnotation>
 	 */
 	public static function getValidParametersAnnotations(File $phpcsFile, int $functionPointer): array
 	{
+		$tokens = $phpcsFile->getTokens();
+
 		$parametersAnnotations = [];
+
+		if (self::getName($phpcsFile, $functionPointer) === '__construct') {
+			for ($i = $tokens[$functionPointer]['parenthesis_opener'] + 1; $i < $tokens[$functionPointer]['parenthesis_closer']; $i++) {
+				if ($tokens[$i]['code'] !== T_VARIABLE) {
+					continue;
+				}
+
+				/** @var VariableAnnotation[] $varAnnotations */
+				$varAnnotations = AnnotationHelper::getAnnotationsByName($phpcsFile, $i, '@var');
+				if ($varAnnotations === []) {
+					continue;
+				}
+
+				$parametersAnnotations[$tokens[$i]['content']] = $varAnnotations[0];
+			}
+		}
+
 		foreach (self::getParametersAnnotations($phpcsFile, $functionPointer) as $parameterAnnotation) {
 			if ($parameterAnnotation->getContent() === null) {
 				continue;
@@ -346,14 +365,30 @@ class FunctionHelper
 	}
 
 	/**
-	 * @param File $phpcsFile
-	 * @param int $functionPointer
-	 * @return array<string, ParameterAnnotation>
+	 * @return array<string, ParameterAnnotation|VariableAnnotation>
 	 */
 	public static function getValidPrefixedParametersAnnotations(File $phpcsFile, int $functionPointer): array
 	{
+		$tokens = $phpcsFile->getTokens();
+
 		$parametersAnnotations = [];
 		foreach (AnnotationHelper::PREFIXES as $prefix) {
+			if (self::getName($phpcsFile, $functionPointer) === '__construct') {
+				for ($i = $tokens[$functionPointer]['parenthesis_opener'] + 1; $i < $tokens[$functionPointer]['parenthesis_closer']; $i++) {
+					if ($tokens[$i]['code'] !== T_VARIABLE) {
+						continue;
+					}
+
+					/** @var VariableAnnotation[] $varAnnotations */
+					$varAnnotations = AnnotationHelper::getAnnotationsByName($phpcsFile, $i, sprintf('@%s-var', $prefix));
+					if ($varAnnotations === []) {
+						continue;
+					}
+
+					$parametersAnnotations[$tokens[$i]['content']] = $varAnnotations[0];
+				}
+			}
+
 			/** @var ParameterAnnotation[] $annotations */
 			$annotations = AnnotationHelper::getAnnotationsByName($phpcsFile, $functionPointer, sprintf('@%s-param', $prefix));
 			foreach ($annotations as $parameterAnnotation) {
@@ -385,8 +420,6 @@ class FunctionHelper
 	}
 
 	/**
-	 * @param File $phpcsFile
-	 * @param int $functionPointer
 	 * @return ReturnAnnotation[]
 	 */
 	public static function getValidPrefixedReturnAnnotations(File $phpcsFile, int $functionPointer): array
@@ -408,7 +441,6 @@ class FunctionHelper
 	}
 
 	/**
-	 * @param File $phpcsFile
 	 * @return string[]
 	 */
 	public static function getAllFunctionNames(File $phpcsFile): array
@@ -428,24 +460,93 @@ class FunctionHelper
 		);
 	}
 
-	public static function getFunctionLengthInLines(File $file, int $position): int
+	/**
+	 * @param int $flags optional bitmask of self::LINE_INCLUDE_* constants
+	 */
+	public static function getFunctionLengthInLines(File $file, int $functionPosition, int $flags = 0): int
 	{
-		$tokens = $file->getTokens();
-		$token = $tokens[$position];
-
-		if (self::isAbstract($file, $position)) {
+		if (self::isAbstract($file, $functionPosition)) {
 			return 0;
 		}
+		return self::getLineCount($file, $functionPosition, $flags);
+	}
 
-		$firstToken = $tokens[$token['scope_opener']];
-		$lastToken = $tokens[$token['scope_closer']];
+	public static function getLineCount(File $file, int $tokenPosition, int $flags = 0): int
+	{
+		$includeWhitespace = ($flags & self::LINE_INCLUDE_WHITESPACE) === self::LINE_INCLUDE_WHITESPACE;
+		$includeComments = ($flags & self::LINE_INCLUDE_COMMENT) === self::LINE_INCLUDE_COMMENT;
 
-		return $lastToken['line'] - $firstToken['line'] - 1;
+		$tokens = $file->getTokens();
+		$token = $tokens[$tokenPosition];
+
+		$tokenOpenerPosition = $token['scope_opener'] ?? $tokenPosition;
+		$tokenCloserPosition = $token['scope_closer'] ?? $file->numTokens - 1;
+		$tokenOpenerLine = $tokens[$tokenOpenerPosition]['line'];
+		$tokenCloserLine = $tokens[$tokenCloserPosition]['line'];
+
+		$lineCount = 0;
+		$lastCommentLine = null;
+		$previousIncludedPosition = null;
+
+		for ($position = $tokenOpenerPosition; $position <= $tokenCloserPosition - 1; $position++) {
+			$token = $tokens[$position];
+			if ($includeComments === false) {
+				if (in_array($token['code'], Tokens::$commentTokens, true)) {
+					if (
+						$previousIncludedPosition !== null &&
+						substr_count($token['content'], $file->eolChar) > 0 &&
+						$token['line'] === $tokens[$previousIncludedPosition]['line']
+					) {
+						// Comment with linebreak starting on same line as included Token
+						$lineCount++;
+					}
+					// Don't include comment
+					$lastCommentLine = $token['line'];
+					continue;
+				}
+				if (
+					$previousIncludedPosition !== null &&
+					$token['code'] === T_WHITESPACE &&
+					$token['line'] === $lastCommentLine &&
+					$token['line'] !== $tokens[$previousIncludedPosition]['line']
+				) {
+					// Whitespace after block comment... still on comment line...
+					// Ignore along with the comment
+					continue;
+				}
+			}
+			if ($token['code'] === T_WHITESPACE) {
+				$nextNonWhitespacePosition = $file->findNext(T_WHITESPACE, $position + 1, $tokenCloserPosition + 1, true);
+				if (
+					$includeWhitespace === false &&
+					$token['column'] === 1 &&
+					$nextNonWhitespacePosition !== false &&
+					$tokens[$nextNonWhitespacePosition]['line'] !== $token['line']
+				) {
+					// This line is nothing but whitepace
+					$position = $nextNonWhitespacePosition - 1;
+					continue;
+				}
+				if ($previousIncludedPosition === $tokenOpenerPosition && $token['line'] === $tokenOpenerLine) {
+					// Don't linclude line break after opening "{"
+					// Unless there was code or an (included) comment following the "{"
+					continue;
+				}
+			}
+			if ($token['code'] !== T_WHITESPACE) {
+				$previousIncludedPosition = $position;
+			}
+			$newLineFoundCount = substr_count($token['content'], $file->eolChar);
+			$lineCount += $newLineFoundCount;
+		}
+		if ($tokens[$previousIncludedPosition]['line'] === $tokenCloserLine) {
+			// There is code or comment on the closing "}" line...
+			$lineCount++;
+		}
+		return $lineCount;
 	}
 
 	/**
-	 * @param File $phpcsFile
-	 * @param int $previousFunctionPointer
 	 * @return Generator<int>
 	 */
 	private static function getAllFunctionOrMethodPointers(File $phpcsFile, int &$previousFunctionPointer): Generator

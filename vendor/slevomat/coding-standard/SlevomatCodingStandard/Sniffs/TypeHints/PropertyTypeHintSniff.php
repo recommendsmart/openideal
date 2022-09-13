@@ -42,6 +42,7 @@ use const T_FUNCTION;
 use const T_PRIVATE;
 use const T_PROTECTED;
 use const T_PUBLIC;
+use const T_READONLY;
 use const T_SEMICOLON;
 use const T_STATIC;
 use const T_VAR;
@@ -71,6 +72,9 @@ class PropertyTypeHintSniff implements Sniff
 	/** @var bool|null */
 	public $enableUnionTypeHint = null;
 
+	/** @var bool|null */
+	public $enableIntersectionTypeHint = null;
+
 	/** @var string[] */
 	public $traversableTypeHints = [];
 
@@ -87,15 +91,15 @@ class PropertyTypeHintSniff implements Sniff
 			T_PUBLIC,
 			T_PROTECTED,
 			T_PRIVATE,
+			T_STATIC,
 		];
 	}
 
 	/**
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint
-	 * @param File $phpcsFile
-	 * @param int $visibilityPointer
+	 * @param int $pointer
 	 */
-	public function process(File $phpcsFile, $visibilityPointer): void
+	public function process(File $phpcsFile, $pointer): void
 	{
 		$this->enableNativeTypeHint = SniffSettingsHelper::isEnabledByPhpVersion($this->enableNativeTypeHint, 70400);
 		$this->enableMixedTypeHint = $this->enableNativeTypeHint
@@ -104,17 +108,26 @@ class PropertyTypeHintSniff implements Sniff
 		$this->enableUnionTypeHint = $this->enableNativeTypeHint
 			? SniffSettingsHelper::isEnabledByPhpVersion($this->enableUnionTypeHint, 80000)
 			: false;
+		$this->enableIntersectionTypeHint = $this->enableNativeTypeHint
+			? SniffSettingsHelper::isEnabledByPhpVersion($this->enableIntersectionTypeHint, 80100)
+			: false;
 
 		$tokens = $phpcsFile->getTokens();
 
-		$asPointer = TokenHelper::findPreviousEffective($phpcsFile, $visibilityPointer - 1);
+		$asPointer = TokenHelper::findPreviousEffective($phpcsFile, $pointer - 1);
 		if ($tokens[$asPointer]['code'] === T_AS) {
 			return;
 		}
 
-		$propertyPointer = TokenHelper::findNext($phpcsFile, [T_FUNCTION, T_CONST, T_VARIABLE], $visibilityPointer + 1);
+		$nextPointer = TokenHelper::findNextEffective($phpcsFile, $pointer + 1);
+		if (in_array($tokens[$nextPointer]['code'], [T_VAR, T_PUBLIC, T_PROTECTED, T_PRIVATE, T_READONLY, T_STATIC], true)) {
+			// We don't want to report the some property twice
+			return;
+		}
 
-		if ($tokens[$propertyPointer]['code'] !== T_VARIABLE) {
+		$propertyPointer = TokenHelper::findNext($phpcsFile, [T_FUNCTION, T_CONST, T_VARIABLE], $pointer + 1);
+
+		if ($propertyPointer === null || $tokens[$propertyPointer]['code'] !== T_VARIABLE) {
 			return;
 		}
 
@@ -149,10 +162,6 @@ class PropertyTypeHintSniff implements Sniff
 	}
 
 	/**
-	 * @param File $phpcsFile
-	 * @param int $propertyPointer
-	 * @param TypeHint|null $propertyTypeHint
-	 * @param VariableAnnotation|null $propertyAnnotation
 	 * @param VariableAnnotation[] $prefixedPropertyAnnotations
 	 */
 	private function checkTypeHint(
@@ -296,7 +305,7 @@ class PropertyTypeHintSniff implements Sniff
 		}
 		$typeHintsWithConvertedUnion = array_unique($typeHintsWithConvertedUnion);
 
-		if (count($typeHintsWithConvertedUnion) > 1 && !$canTryUnionTypeHint) {
+		if (count($typeHintsWithConvertedUnion) > 1 && !$canTryUnionTypeHint && !$this->enableIntersectionTypeHint) {
 			$this->reportUselessSuppress($phpcsFile, $propertyPointer, $isSuppressedNativeTypeHint, $suppressNameNativeTypeHint);
 			return;
 		}
@@ -347,6 +356,8 @@ class PropertyTypeHintSniff implements Sniff
 
 		if (in_array('mixed', $typeHintsWithConvertedUnion, true)) {
 			$propertyTypeHint = 'mixed';
+		} elseif ($originalTypeNode instanceof IntersectionTypeNode) {
+			$propertyTypeHint = implode('&', $typeHintsWithConvertedUnion);
 		} else {
 			$propertyTypeHint = implode('|', $typeHintsWithConvertedUnion);
 			if ($nullableTypeHint) {
@@ -360,7 +371,7 @@ class PropertyTypeHintSniff implements Sniff
 
 		$propertyStartPointer = TokenHelper::findPrevious(
 			$phpcsFile,
-			[T_PRIVATE, T_PROTECTED, T_PUBLIC, T_VAR, T_STATIC],
+			[T_PRIVATE, T_PROTECTED, T_PUBLIC, T_VAR, T_STATIC, T_READONLY],
 			$propertyPointer - 1
 		);
 
@@ -385,10 +396,6 @@ class PropertyTypeHintSniff implements Sniff
 	}
 
 	/**
-	 * @param File $phpcsFile
-	 * @param int $propertyPointer
-	 * @param TypeHint|null $propertyTypeHint
-	 * @param VariableAnnotation|null $propertyAnnotation
 	 * @param VariableAnnotation[] $prefixedPropertyAnnotations
 	 */
 	private function checkTraversableTypeHintSpecification(
@@ -481,7 +488,8 @@ class PropertyTypeHintSniff implements Sniff
 			$propertyTypeHint,
 			$propertyAnnotation,
 			$this->getTraversableTypeHints(),
-			$this->enableUnionTypeHint
+			$this->enableUnionTypeHint,
+			$this->enableIntersectionTypeHint
 		)) {
 			$this->reportUselessSuppress($phpcsFile, $propertyPointer, $isSuppressed, $suppressName);
 			return;
@@ -623,8 +631,6 @@ class PropertyTypeHintSniff implements Sniff
 	}
 
 	/**
-	 * @param File $phpcsFile
-	 * @param int $propertyPointer
 	 * @return VariableAnnotation[]
 	 */
 	private function getValidPrefixedAnnotations(File $phpcsFile, int $propertyPointer): array

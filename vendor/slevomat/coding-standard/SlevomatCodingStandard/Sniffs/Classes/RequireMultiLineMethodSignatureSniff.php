@@ -37,11 +37,12 @@ class RequireMultiLineMethodSignatureSniff extends AbstractMethodSignature
 
 	/**
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint
-	 * @param File $phpcsFile
 	 * @param int $methodPointer
 	 */
 	public function process(File $phpcsFile, $methodPointer): void
 	{
+		$this->minLineLength = SniffSettingsHelper::normalizeInteger($this->minLineLength);
+
 		if (!FunctionHelper::isMethod($phpcsFile, $methodPointer)) {
 			return;
 		}
@@ -77,8 +78,7 @@ class RequireMultiLineMethodSignatureSniff extends AbstractMethodSignature
 			return;
 		}
 
-		$minLineLength = SniffSettingsHelper::normalizeInteger($this->minLineLength);
-		if ($minLineLength !== 0 && strlen($signatureWithoutTabIndentation) < $minLineLength) {
+		if ($this->minLineLength !== 0 && strlen($signatureWithoutTabIndentation) < $this->minLineLength) {
 			return;
 		}
 
@@ -119,9 +119,7 @@ class RequireMultiLineMethodSignatureSniff extends AbstractMethodSignature
 	}
 
 	/**
-	 * @param string $methodName
 	 * @param string[] $normalizedPatterns
-	 * @return bool
 	 */
 	private function isMethodNameInPatterns(string $methodName, array $normalizedPatterns): bool
 	{

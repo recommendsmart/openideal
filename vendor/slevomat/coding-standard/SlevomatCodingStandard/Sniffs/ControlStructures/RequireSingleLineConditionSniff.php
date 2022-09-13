@@ -22,11 +22,12 @@ class RequireSingleLineConditionSniff extends AbstractLineCondition
 
 	/**
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint
-	 * @param File $phpcsFile
 	 * @param int $controlStructurePointer
 	 */
 	public function process(File $phpcsFile, $controlStructurePointer): void
 	{
+		$this->maxLineLength = SniffSettingsHelper::normalizeInteger($this->maxLineLength);
+
 		if ($this->shouldBeSkipped($phpcsFile, $controlStructurePointer)) {
 			return;
 		}
@@ -91,13 +92,11 @@ class RequireSingleLineConditionSniff extends AbstractLineCondition
 
 	private function shouldReportError(int $lineLength, bool $isSimpleCondition): bool
 	{
-		$maxLineLength = SniffSettingsHelper::normalizeInteger($this->maxLineLength);
-
-		if ($maxLineLength === 0) {
+		if ($this->maxLineLength === 0) {
 			return true;
 		}
 
-		if ($lineLength <= $maxLineLength) {
+		if ($lineLength <= $this->maxLineLength) {
 			return true;
 		}
 

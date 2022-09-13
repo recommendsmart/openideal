@@ -20,10 +20,7 @@ use function substr;
 use function ucfirst;
 use function uksort;
 use const DIRECTORY_SEPARATOR;
-use const T_CLASS;
-use const T_INTERFACE;
 use const T_STRING;
-use const T_TRAIT;
 
 class TypeNameMatchesFileNameSniff implements Sniff
 {
@@ -62,16 +59,11 @@ class TypeNameMatchesFileNameSniff implements Sniff
 	 */
 	public function register(): array
 	{
-		return [
-			T_CLASS,
-			T_INTERFACE,
-			T_TRAIT,
-		];
+		return TokenHelper::$typeKeywordTokenCodes;
 	}
 
 	/**
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint
-	 * @param File $phpcsFile
 	 * @param int $typePointer
 	 */
 	public function process(File $phpcsFile, $typePointer): void

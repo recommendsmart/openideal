@@ -5,7 +5,7 @@ namespace Drupal\votingapi_widgets;
 use Drupal\votingapi\VoteResultFunctionBase;
 
 /**
- * FieldVoteResultBase class.
+ * Base class for VoteResultFunction plugins.
  */
 class FieldVoteResultBase extends VoteResultFunctionBase implements FieldVoteResultInterface {
 

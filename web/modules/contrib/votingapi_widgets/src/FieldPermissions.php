@@ -4,27 +4,27 @@ namespace Drupal\votingapi_widgets;
 
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Core\Entity\EntityFieldManager;
+use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 
 /**
- * Field permissions.
+ * Implements custom permissions for votingapi_widgets fields.
  */
 class FieldPermissions implements ContainerInjectionInterface {
 
   use StringTranslationTrait;
 
   /**
-   * The FieldPermissionsService.
+   * The entity field manager service.
    *
-   * @var Drupal\field_permissions\FieldPermissionsService
+   * @var \Drupal\Core\Entity\EntityFieldManagerInterface
    */
   protected $fieldManager;
 
   /**
-   * Constructs a FieldPermissionsService instance.
+   * Constructs a FieldPermissions instance.
    */
-  public function __construct(EntityFieldManager $field_manager) {
+  public function __construct(EntityFieldManagerInterface $field_manager) {
     $this->fieldManager = $field_manager;
   }
 
@@ -36,7 +36,7 @@ class FieldPermissions implements ContainerInjectionInterface {
   }
 
   /**
-   * Get implemets permissions invoke in field_permissions.permissions.yml.
+   * Implements permissions callback for field_permissions.permissions.yml.
    *
    * @return array
    *   Add custom permissions.

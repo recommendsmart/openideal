@@ -7,7 +7,7 @@
 
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\field\Entity\FieldStorageConfig;
-use Drupal\core\Entity\EntityTypeInterface;
+use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\field\Entity\FieldConfig;
@@ -36,7 +36,7 @@ function votingapi_widgets_entity_base_field_info(EntityTypeInterface $entity_ty
   if ($entity_type->id() != 'vote') {
     return;
   }
-  $fields = array();
+  $fields = [];
 
   $fields['field_name'] = BaseFieldDefinition::create('string')
     ->setLabel(t('Field name'))
@@ -44,7 +44,7 @@ function votingapi_widgets_entity_base_field_info(EntityTypeInterface $entity_ty
     ->setRevisionable(FALSE)
     ->setRequired(FALSE)
     ->setDescription(t('Holds the field name.'))
-    ->setPropertyConstraints('value', array('Length' => array('max' => FieldStorageConfig::NAME_MAX_LENGTH)));
+    ->setPropertyConstraints('value', ['Length' => ['max' => FieldStorageConfig::NAME_MAX_LENGTH]]);
 
   return $fields;
 }
@@ -102,4 +102,17 @@ function votingapi_widgets_theme() {
       ],
     ],
   ];
+}
+
+/**
+ * Implements hook_preprocess_HOOK() for the voting_widgets_summary template.
+ */
+function votingapi_widgets_preprocess_votingapi_widgets_summary(array &$variables) {
+  // If all votes have been deleted the vote_field_count variable is zero
+  // instead of a default empty array.
+  // Here we set vote_field_count to 0 if the results array is empty so it can
+  // be more easily checked in the Twig template.
+  if (empty($variables['results'])) {
+    $variables['results']['vote_field_count'] = 0;
+  }
 }

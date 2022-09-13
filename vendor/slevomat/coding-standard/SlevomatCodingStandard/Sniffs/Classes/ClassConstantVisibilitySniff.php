@@ -13,6 +13,7 @@ use function sprintf;
 use const T_ANON_CLASS;
 use const T_CLASS;
 use const T_CONST;
+use const T_ENUM;
 use const T_FINAL;
 use const T_INTERFACE;
 use const T_PRIVATE;
@@ -39,7 +40,6 @@ class ClassConstantVisibilitySniff implements Sniff
 
 	/**
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint
-	 * @param File $phpcsFile
 	 * @param int $constantPointer
 	 */
 	public function process(File $phpcsFile, $constantPointer): void
@@ -52,7 +52,7 @@ class ClassConstantVisibilitySniff implements Sniff
 
 		/** @var int $classPointer */
 		$classPointer = array_keys($tokens[$constantPointer]['conditions'])[count($tokens[$constantPointer]['conditions']) - 1];
-		if (!in_array($tokens[$classPointer]['code'], [T_CLASS, T_INTERFACE, T_ANON_CLASS], true)) {
+		if (!in_array($tokens[$classPointer]['code'], [T_CLASS, T_INTERFACE, T_ANON_CLASS, T_ENUM], true)) {
 			return;
 		}
 

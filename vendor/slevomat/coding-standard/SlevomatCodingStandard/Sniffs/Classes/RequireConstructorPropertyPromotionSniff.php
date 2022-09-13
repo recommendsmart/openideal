@@ -37,6 +37,7 @@ use const T_INC;
 use const T_OBJECT_OPERATOR;
 use const T_OPEN_CURLY_BRACKET;
 use const T_OPEN_PARENTHESIS;
+use const T_READONLY;
 use const T_SEMICOLON;
 use const T_SWITCH;
 use const T_VARIABLE;
@@ -60,7 +61,6 @@ class RequireConstructorPropertyPromotionSniff implements Sniff
 
 	/**
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint
-	 * @param File $phpcsFile
 	 * @param int $functionPointer
 	 */
 	public function process(File $phpcsFile, $functionPointer): void
@@ -172,15 +172,23 @@ class RequireConstructorPropertyPromotionSniff implements Sniff
 					continue;
 				}
 
-				$visibilityPointer = TokenHelper::findPrevious($phpcsFile, Tokens::$scopeModifiers, $propertyPointer - 1);
-				$visibility = $tokens[$visibilityPointer]['content'];
-
 				$propertyDocCommentOpenerPointer = DocCommentHelper::findDocCommentOpenPointer($phpcsFile, $propertyPointer);
 				$pointerBeforeProperty = TokenHelper::findFirstTokenOnLine(
 					$phpcsFile,
 					$propertyDocCommentOpenerPointer ?? $propertyPointer
 				);
 				$propertyEndPointer = TokenHelper::findNext($phpcsFile, T_SEMICOLON, $propertyPointer + 1);
+
+				$visibilityPointer = TokenHelper::findPrevious(
+					$phpcsFile,
+					Tokens::$scopeModifiers,
+					$propertyPointer - 1,
+					$pointerBeforeProperty
+				);
+				$visibility = $tokens[$visibilityPointer]['content'];
+
+				$readonlyPointer = TokenHelper::findPrevious($phpcsFile, T_READONLY, $propertyPointer - 1, $pointerBeforeProperty);
+				$isReadonly = $readonlyPointer !== null;
 
 				$propertyEqualPointer = TokenHelper::findNext($phpcsFile, T_EQUAL, $propertyPointer + 1, $propertyEndPointer);
 				$propertyDefaultValue = $propertyEqualPointer !== null
@@ -206,6 +214,10 @@ class RequireConstructorPropertyPromotionSniff implements Sniff
 
 				for ($i = $pointerBeforeProperty; $i < $pointerAfterProperty; $i++) {
 					$phpcsFile->fixer->replaceToken($i, '');
+				}
+
+				if ($isReadonly) {
+					$phpcsFile->fixer->addContentBefore($parameterStartPointer, 'readonly ');
 				}
 
 				$phpcsFile->fixer->addContentBefore($parameterStartPointer, sprintf('%s ', $visibility));
@@ -272,8 +284,6 @@ class RequireConstructorPropertyPromotionSniff implements Sniff
 	}
 
 	/**
-	 * @param File $phpcsFile
-	 * @param int $functionPointer
 	 * @return int[]
 	 */
 	private function getParameterPointers(File $phpcsFile, int $functionPointer): array
@@ -288,8 +298,6 @@ class RequireConstructorPropertyPromotionSniff implements Sniff
 	}
 
 	/**
-	 * @param File $phpcsFile
-	 * @param int $classPointer
 	 * @return int[]
 	 */
 	private function getPropertyPointers(File $phpcsFile, int $classPointer): array

@@ -80,7 +80,9 @@
 
     if (!response.dialogOptions.drupalAutoButtons || response.dialogOptions.drupalAutoButtons !== 'false') {
       response.dialogOptions.drupalAutoButtons = true;
-      response.dialogOptions.buttons = Drupal.behaviors.bs4_modal.prepareDialogButtons($dialog);
+      if (response.dialogOptions.buttons === undefined || response.dialogOptions.buttons.length <= 0) {
+        response.dialogOptions.buttons = Drupal.behaviors.bs4_modal.prepareDialogButtons($dialog);
+      }
     } else {
       response.dialogOptions.drupalAutoButtons = false;
     }
@@ -107,9 +109,6 @@
     var $dialog = $(response.selector);
     if ($dialog.length) {
       Drupal.bs4_modal($dialog.get(0)).close();
-      if (!response.persist) {
-        $dialog.remove();
-      }
     }
 
     $dialog.off('dialogButtonsChange');

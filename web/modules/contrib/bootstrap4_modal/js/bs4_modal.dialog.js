@@ -81,14 +81,19 @@
         var classes = [ settings.buttonClass, settings.buttonPrimaryClass ];
 
         var button = $('<button type="button">');
+        if (buttonObject.attributes !== undefined) {
+          $(button).attr(buttonObject.attributes);
+        }
         $(button)
           .addClass(buttonObject.class)
           .click(function (e) {
-            buttonObject.click(e);
+            if (buttonObject.click !== undefined) {
+              buttonObject.click(e);
+            }
           })
           .html(buttonObject.text);
 
-        if (!$(button).attr("class").match(/\bbtn-.*/)) {
+        if ($(button).attr("class") && !$(button).attr("class").match(/\bbtn-.*/)) {
           $(button)
             .addClass(classes.join(' '));
         }
@@ -98,17 +103,17 @@
       if ($('.modal-dialog .modal-content .modal-footer', $element).length > 0) {
         $('.modal-dialog .modal-content .modal-footer', $element).remove();
       }
-      $(modalFooter).appendTo($('.modal-dialog .modal-content', $element));
+      if ($(modalFooter).html().length > 0) {
+        $(modalFooter).appendTo($('.modal-dialog .modal-content', $element));
+      }
     }
 
     function closeDialog(value) {
-      $(window).trigger('dialog:beforeclose', [dialog, $element]);
       if ($element.modal !== undefined) {
         $element.modal('hide');
       }
       dialog.returnValue = value;
       dialog.open = false;
-      $(window).trigger('dialog:afterclose', [dialog, $element]);
     }
 
     function settingIsTrue(setting) {
@@ -125,13 +130,15 @@
     dialog.showModal = function () {
       openDialog({ modal: true });
     };
-    dialog.close = closeDialog;
+    dialog.close = function () {
+      closeDialog({});
+    }
 
     $element.on('hide.bs.modal', function (e) {
       $(window).trigger('dialog:beforeclose', [dialog, $element]);
     });
 
-    $element.on('hide.bs.modal', function (e) {
+    $element.on('hidden.bs.modal', function (e) {
       $(window).trigger('dialog:afterclose', [dialog, $element]);
     });
 

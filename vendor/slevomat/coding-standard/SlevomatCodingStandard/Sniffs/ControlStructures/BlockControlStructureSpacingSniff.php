@@ -30,11 +30,15 @@ class BlockControlStructureSpacingSniff extends AbstractControlStructureSpacing
 
 	/**
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint
-	 * @param File $phpcsFile
 	 * @param int $controlStructurePointer
 	 */
 	public function process(File $phpcsFile, $controlStructurePointer): void
 	{
+		$this->linesCountBefore = SniffSettingsHelper::normalizeInteger($this->linesCountBefore);
+		$this->linesCountBeforeFirst = SniffSettingsHelper::normalizeInteger($this->linesCountBeforeFirst);
+		$this->linesCountAfter = SniffSettingsHelper::normalizeInteger($this->linesCountAfter);
+		$this->linesCountAfterLast = SniffSettingsHelper::normalizeInteger($this->linesCountAfterLast);
+
 		if ($this->isWhilePartOfDo($phpcsFile, $controlStructurePointer)) {
 			return;
 		}
@@ -70,35 +74,28 @@ class BlockControlStructureSpacingSniff extends AbstractControlStructureSpacing
 
 	protected function getLinesCountBefore(): int
 	{
-		return SniffSettingsHelper::normalizeInteger($this->linesCountBefore);
+		return $this->linesCountBefore;
 	}
 
 	/**
 	 * @phpcsSuppress SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter
-	 * @param File $phpcsFile
-	 * @param int $controlStructurePointer
-	 * @return int
 	 */
 	protected function getLinesCountBeforeFirst(File $phpcsFile, int $controlStructurePointer): int
 	{
-		return SniffSettingsHelper::normalizeInteger($this->linesCountBeforeFirst);
+		return $this->linesCountBeforeFirst;
 	}
 
 	protected function getLinesCountAfter(): int
 	{
-		return SniffSettingsHelper::normalizeInteger($this->linesCountAfter);
+		return $this->linesCountAfter;
 	}
 
 	/**
 	 * @phpcsSuppress SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter
-	 * @param File $phpcsFile
-	 * @param int $controlStructurePointer
-	 * @param int $controlStructureEndPointer
-	 * @return int
 	 */
 	protected function getLinesCountAfterLast(File $phpcsFile, int $controlStructurePointer, int $controlStructureEndPointer): int
 	{
-		return SniffSettingsHelper::normalizeInteger($this->linesCountAfterLast);
+		return $this->linesCountAfterLast;
 	}
 
 	private function isWhilePartOfDo(File $phpcsFile, int $controlStructurePointer): bool

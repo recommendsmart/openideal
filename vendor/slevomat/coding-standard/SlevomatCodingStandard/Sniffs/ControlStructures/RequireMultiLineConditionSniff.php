@@ -31,11 +31,12 @@ class RequireMultiLineConditionSniff extends AbstractLineCondition
 
 	/**
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint
-	 * @param File $phpcsFile
 	 * @param int $controlStructurePointer
 	 */
 	public function process(File $phpcsFile, $controlStructurePointer): void
 	{
+		$this->minLineLength = SniffSettingsHelper::normalizeInteger($this->minLineLength);
+
 		if ($this->shouldBeSkipped($phpcsFile, $controlStructurePointer)) {
 			return;
 		}
@@ -175,10 +176,8 @@ class RequireMultiLineConditionSniff extends AbstractLineCondition
 
 	private function shouldReportError(int $lineLength, int $conditionLinesCount, int $booleanOperatorPointersCount): bool
 	{
-		$minLineLength = SniffSettingsHelper::normalizeInteger($this->minLineLength);
-
 		if ($conditionLinesCount === 1) {
-			return $minLineLength === 0 || $lineLength >= $minLineLength;
+			return $this->minLineLength === 0 || $lineLength >= $this->minLineLength;
 		}
 
 		return $this->alwaysSplitAllConditionParts

@@ -44,6 +44,8 @@ Sniff provides the following settings:
 
 * `enableObjectTypeHint`: enforces to transform `@param object` into native `object` typehint. It's on by default if you're on PHP 7.2+
 * `enableMixedTypeHint`: enforces to transform `@param mixed` into native `mixed` typehint. It's on by default if you're on PHP 8.0+
+* `enableUnionTypeHint`: enforces to transform `@param string|int` into native `string|int` typehint. It's on by default if you're on PHP 8.0+
+* `enableIntersectionTypeHint`: enforces to transform `@param Foo&Bar` into native `Foo&Bar` typehint. It's on by default if you're on PHP 8.1+
 * `traversableTypeHints`: enforces which typehints must have specified contained type. E. g. if you set this to `\Doctrine\Common\Collections\Collection`, then `\Doctrine\Common\Collections\Collection` must always be supplied with the contained type: `\Doctrine\Common\Collections\Collection|Foo[]`.
 
 This sniff can cause an error if you're overriding or implementing a parent method which does not have typehints. In such cases add `@phpcsSuppress SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint` annotation to the method to have this sniff skip it.
@@ -59,6 +61,7 @@ Sniff provides the following settings:
 * `enableNativeTypeHint`: enforces to transform `@var int` into native `int` typehint. It's on by default if you're on PHP 7.4+
 * `enableMixedTypeHint`: enforces to transform `@var mixed` into native `mixed` typehint. It's on by default if you're on PHP 8.0+. It can be enabled only when `enableNativeTypeHint` is enabled too.
 * `enableUnionTypeHint`: enforces to transform `@var string|int` into native `string|int` typehint. It's on by default if you're on PHP 8.0+. It can be enabled only when `enableNativeTypeHint` is enabled too.
+* `enableIntersectionTypeHint`: enforces to transform `@var Foo&Bar` into native `Foo&Bar` typehint. It's on by default if you're on PHP 8.1+. It can be enabled only when `enableNativeTypeHint` is enabled too.
 * `traversableTypeHints`: enforces which typehints must have specified contained type. E. g. if you set this to `\Doctrine\Common\Collections\Collection`, then `\Doctrine\Common\Collections\Collection` must always be supplied with the contained type: `\Doctrine\Common\Collections\Collection|Foo[]`.
 
 This sniff can cause an error if you're overriding parent property which does not have typehints. In such cases add `@phpcsSuppress SlevomatCodingStandard.TypeHints.PropertyTypeHint.MissingNativeTypeHint` annotation to the property to have this sniff skip it.
@@ -74,7 +77,9 @@ Sniff provides the following settings:
 * `enableObjectTypeHint`: enforces to transform `@return object` into native `object` typehint. It's on by default if you're on PHP 7.2+
 * `enableStaticTypeHint`: enforces to transform `@return static` into native `static` typehint. It's on by default if you're on PHP 8.0+
 * `enableMixedTypeHint`: enforces to transform `@return mixed` into native `mixed` typehint. It's on by default if you're on PHP 8.0+
-* `enableUnionTypeHint`: enforces to transform `@var string|int` into native `string|int` typehint. It's on by default if you're on PHP 8.0+.
+* `enableUnionTypeHint`: enforces to transform `@return string|int` into native `string|int` typehint. It's on by default if you're on PHP 8.0+.
+* `enableIntersectionTypeHint`: enforces to transform `@return Foo&Bar` into native `Foo&Bar` typehint. It's on by default if you're on PHP 8.1+.
+* `enableNeverTypeHint`: enforces to transform `@return never` into native `never` typehint. It's on by default if you're on PHP 8.1+.
 * `traversableTypeHints`: enforces which typehints must have specified contained type. E. g. if you set this to `\Doctrine\Common\Collections\Collection`, then `\Doctrine\Common\Collections\Collection` must always be supplied with the contained type: `\Doctrine\Common\Collections\Collection|Foo[]`.
 
 This sniff can cause an error if you're overriding or implementing a parent method which does not have typehints. In such cases add `@phpcsSuppress SlevomatCodingStandard.TypeHints.ReturnTypeHint.MissingNativeTypeHint` annotation to the method to have this sniff skip it.
@@ -90,9 +95,13 @@ Checks format of union type hints.
 Sniff provides the following settings:
 
 * `enable`: either to enable or not this sniff. By default, it is enabled for PHP versions 8.0 or higher.
-* `withSpaces`: `yes` requires spaces arount `|`, `no` requires no space around `|`. None is set by default so both is enabled.
+* `withSpaces`: `yes` requires spaces around `|`, `no` requires no space around `|`. None is set by default so both is enabled.
 * `shortNullable`: `yes` requires usage of `?` for nullable type hint, `no` disallows it. None is set by default so both are enabled.
 * `nullPosition`: `first` requires `null` on first position in the type hint, `last` requires last position. None is set by default so `null` can be everywhere.
+
+#### SlevomatCodingStandard.Exceptions.DisallowNonCapturingCatch
+
+This sniff forbids use of non-capturing catch introduced in PHP 8.0 [PHP RFC: non-capturing catches](https://wiki.php.net/rfc/non-capturing_catches).
 
 #### SlevomatCodingStandard.Exceptions.ReferenceThrowableOnly 🔧🚧
 
@@ -128,7 +137,6 @@ Checks that class/trait/interface members are in the correct order.
 Sniff provides the following settings:
 
 * `groups`: order of groups. Use multiple groups in one `<element value="">` to not differentiate among them. You can use specific groups or shortcuts.
-* `enableFinalMethods`: enables groups for `final` methods
 
 **List of supported groups**:
 uses,
@@ -178,6 +186,14 @@ Disallows late static binding for constants.
 #### SlevomatCodingStandard.Classes.ForbiddenPublicProperty
 
 Disallows using public properties.
+
+This sniff provides the following setting:
+
+* `checkPromoted`: will check promoted properties too.
+
+#### SlevomatCodingStandard.Classes.RequireAbstractOrFinal 🔧
+
+Requires the class to be declared either as abstract or as final.
 
 #### SlevomatCodingStandard.Classes.RequireConstructorPropertyPromotion 🔧
 
@@ -288,6 +304,8 @@ Reports closures not using `$this` that are not declared `static`.
 
 Disallows long functions. This sniff provides the following setting:
 
+* `includeComments`: should comments be included in the count (default value is false).
+* `includeWhitespace`: shoud empty lines be included in the count (default value is false).
 * `maxLinesLength`: specifies max allowed function lines length (default value is 20).
 
 #### SlevomatCodingStandard.PHP.DisallowDirectMagicInvokeCall 🔧
@@ -467,6 +485,23 @@ Sniff provides the following settings:
 
 * `enableAfterHeredoc`: enables/disables trailing commas after HEREDOC/NOWDOC, default based on PHP version.
 
+#### SlevomatCodingStandard.Classes.BackedEnumTypeSpacing 🔧
+
+* Checks number of spaces before `:` and before type.
+
+Sniff provides the following settings:
+
+* `spacesCountBeforeColon`: the number of spaces before `:`.
+* `spacesCountBeforeType`: the number of spaces before type.
+
+#### SlevomatCodingStandard.Classes.ClassLength
+
+Disallows long classes. This sniff provides the following settings:
+
+* `includeComments`: should comments be included in the count (default value is false).
+* `includeWhitespace`: shoud empty lines be included in the count (default value is false).
+* `maxLinesLength`: specifies max allowed function lines length (default value is 250).
+
 #### SlevomatCodingStandard.Classes.ClassMemberSpacing 🔧
 
 Checks lines count between different class members, eg. between last property and first method.
@@ -522,6 +557,19 @@ Sniff provides the following settings:
 * `linesCountBeforeFirst`: allows to configure the number of lines before first parent call.
 * `linesCountAfter`: allows to configure the number of lines after parent call.
 * `linesCountAfterLast`: allows to configure the number of lines after last parent call.
+
+#### SlevomatCodingStandard.Classes.PropertyDeclaration 🔧
+
+* Checks that there's a single space between a typehint and a property name: `Foo $foo`
+* Checks that there's no whitespace between a nullability symbol and a typehint: `?Foo`
+* Checks that there's a single space before nullability symbol or a typehint: `private ?Foo` or `private Foo`
+* Checks order of modifiers
+
+Sniff provides the following settings:
+
+* `modifiersOrder`: allows to configurure order of modifiers.
+* `checkPromoted`: will check promoted properties too.
+* `enableMultipleSpacesBetweenModifiersCheck`: checks multiple spaces between modifiers.
 
 #### SlevomatCodingStandard.Classes.PropertySpacing 🔧
 
@@ -593,6 +641,14 @@ Sniff provides the following settings:
 * `linesCountBetweenUses`: allows to configure the number of lines between two `use` statements.
 * `linesCountAfterLastUse`: allows to configure the number of lines after last `use`.
 * `linesCountAfterLastUseWhenLastInClass`: allows to configure the number of lines after last `use` when the `use` is the last statement in the class.
+
+#### SlevomatCodingStandard.Complexity.Cognitive
+
+Enforces maximum [cognitive complexity](https://www.sonarsource.com/docs/CognitiveComplexity.pdf) for functions.
+
+Sniff provides the following setting:
+
+* `maxComplexity`: defaults to 5
 
 #### SlevomatCodingStandard.ControlStructures.BlockControlStructureSpacing 🔧
 
@@ -733,6 +789,14 @@ Sniff provides the following settings:
 
 However, if you prefer Yoda conditions, you can use `RequireYodaComparisonSniff`.
 
+#### SlevomatCodingStandard.Files.FileLength
+
+Disallows long files. This sniff provides the following settings:
+
+* `includeComments`: should comments be included in the count (default value is false).
+* `includeWhitespace`: shoud empty lines be included in the count (default value is false).
+* `maxLinesLength`: specifies max allowed function lines length (default value is 250).
+
 #### SlevomatCodingStandard.Files.LineLength
 
 Enforces maximum length of a single line of code.
@@ -796,6 +860,10 @@ This sniff disallows usage of named arguments.
 
 This sniff disallows trailing commas in multi-line calls.
 
+This sniff provides the following setting:
+
+* `onlySingleLine`: to enable checks only for single-line calls.
+
 #### SlevomatCodingStandard.Functions.RequireTrailingCommaInCall 🔧
 
 Commas after the last parameter in function or method call make adding a new parameter easier and result in a cleaner versioning diff.
@@ -806,9 +874,31 @@ This sniff provides the following setting:
 
 * `enable`: either to enable or not this sniff. By default, it is enabled for PHP versions 7.3 or higher.
 
+#### SlevomatCodingStandard.Functions.DisallowTrailingCommaInClosureUse 🔧
+
+This sniff disallows trailing commas in multi-line `use` of closure declaration.
+
+This sniff provides the following setting:
+
+* `onlySingleLine`: to enable checks only for single-line `use` declarations.
+
+#### SlevomatCodingStandard.Functions.RequireTrailingCommaInClosureUse 🔧
+
+Commas after the last inherited variable in multi-line `use` of closure declaration make adding a new variable easier and result in a cleaner versioning diff.
+
+This sniff enforces trailing commas in multi-line declarations.
+
+This sniff provides the following setting:
+
+* `enable`: either to enable or not this sniff. By default, it is enabled for PHP versions 8.0 or higher.
+
 #### SlevomatCodingStandard.Functions.DisallowTrailingCommaInDeclaration 🔧
 
 This sniff disallows trailing commas in multi-line declarations.
+
+This sniff provides the following setting:
+
+* `onlySingleLine`: to enable checks only for single-line declarations.
 
 #### SlevomatCodingStandard.Functions.RequireTrailingCommaInDeclaration 🔧
 
@@ -888,6 +978,7 @@ This sniff provides the following setting:
 * `enable`: either to enable or not this sniff. By default, it is enabled for PHP versions 7.4 or higher.
 * `minDigitsBeforeDecimalPoint`: the mininum digits before decimal point to require separator.
 * `minDigitsAfterDecimalPoint`: the mininum digits after decimal point to require separator.
+* `ignoreOctalNumbers`: to ignore octal numbers.
 
 #### SlevomatCodingStandard.PHP.ReferenceSpacing 🔧
 
@@ -953,6 +1044,7 @@ Sniff provides the following settings:
 * `ignoreSpacesInAnnotation`: to allow multiple spaces to align annotations.
 * `ignoreSpacesInComment`: to allow multiple spaces to align content of the comment.
 * `ignoreSpacesInParameters`: to allow multiple spaces to align parameters.
+* `ignoreSpacesInMatch`: to allow multiple spaces to align `match` expressions.
 
 #### SlevomatCodingStandard.Files.TypeNameMatchesFileName
 
@@ -1036,12 +1128,6 @@ function foo(
 
 * Checks that there's a single space between a typehint and a parameter name: `Foo $foo`
 * Checks that there's no whitespace between a nullability symbol and a typehint: `?Foo`
-
-#### SlevomatCodingStandard.TypeHints.PropertyTypeHintSpacing 🔧
-
-* Checks that there's a single space between a typehint and a property name: `Foo $foo`
-* Checks that there's no whitespace between a nullability symbol and a typehint: `?Foo`
-* Checks that there's a single space before nullability symbol or a typehint: `private ?Foo` or `private Foo`
 
 #### SlevomatCodingStandard.Namespaces.DisallowGroupUse
 
@@ -1285,7 +1371,7 @@ The recommended way to install Slevomat Coding Standard is [through Composer](ht
 ```JSON
 {
 	"require-dev": {
-		"slevomat/coding-standard": "~7.0"
+		"slevomat/coding-standard": "~8.0"
 	}
 }
 ```

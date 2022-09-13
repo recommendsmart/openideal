@@ -3,7 +3,7 @@
         'name' => 'linnovate/openideal-composer',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'e36367eba4bb9b40ea95fc36ad3c6620723488ad',
+        'reference' => 'c9bc6e30bb333e6c8e379770ee923c7097c98671',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -1931,7 +1931,7 @@
         'linnovate/openideal-composer' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'e36367eba4bb9b40ea95fc36ad3c6620723488ad',
+            'reference' => 'c9bc6e30bb333e6c8e379770ee923c7097c98671',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

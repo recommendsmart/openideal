@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'linnovate/openideal-composer',
-        'pretty_version' => '3.0.9.9',
-        'version' => '3.0.9.9',
-        'reference' => NULL,
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => '0575611d086cb84b10eb6a5c0353d6f9b892730c',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -1929,9 +1929,9 @@
             'dev_requirement' => false,
         ),
         'linnovate/openideal-composer' => array(
-            'pretty_version' => '3.0.9.9',
-            'version' => '3.0.9.9',
-            'reference' => NULL,
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '0575611d086cb84b10eb6a5c0353d6f9b892730c',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
